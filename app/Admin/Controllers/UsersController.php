@@ -81,7 +81,7 @@ class UsersController extends Controller
     {
         $grid = new Grid(new User);
 
-        $grid->id('Id');
+        $grid->id('ID')->sortable();
         $grid->name('用户名');
         $grid->email('邮箱');
         $grid->email_verified_at('已验证邮箱')->display(function ($value) {
@@ -92,14 +92,16 @@ class UsersController extends Controller
         // 不在页面显示 `新建` 按钮，因为我们不需要在后台新建用户
         $grid->disableCreateButton();
 
-        $grid->actions(function ($actions) {
-            // 不在每一行后面展示 查看按钮
-            $actions->disableView();
-            // 不在每一行后面展示 删除按钮
-            $actions->disableDelete();
-            // 不在每一行后面展示 编辑按钮
-            $actions->disableEdit();
-        });
+        // 禁用操作列
+        $grid->disableActions();
+        // $grid->actions(function ($actions) {
+        //     // 不在每一行后面展示 查看按钮
+        //     $actions->disableView();
+        //     // 不在每一行后面展示 删除按钮
+        //     $actions->disableDelete();
+        //     // 不在每一行后面展示 编辑按钮
+        //     $actions->disableEdit();
+        // });
 
         $grid->tools(function ($tools) {
             // 禁用批量删除按钮
