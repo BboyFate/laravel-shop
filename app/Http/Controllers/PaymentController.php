@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Exceptions\InvalidRequestException;
 use Carbon\Carbon;
 use Endroid\QrCode\QrCode;
+use App\Events\OrderPaid;
 
 class PaymentController extends Controller
 {
@@ -77,6 +78,8 @@ class PaymentController extends Controller
             'payment_no'     => $data->trade_no, // 支付宝订单号
         ]);
 
+        $this->afterPaid($order);
+
         return app('alipay')->success();
     }
 
@@ -107,6 +110,10 @@ class PaymentController extends Controller
         return response($qrCode->writeString(), 200, ['Content-Type' => $qrCode->getContentType()]);
     }
 
+    /**
+     * 微信支付 服务端回调
+     * @return [type] [description]
+     */
     public function wechatNotify()
     {
         // 校验参数是否正确
@@ -128,6 +135,18 @@ class PaymentController extends Controller
             'payment_no'     => $data->transaction_id,
         ]);
 
+        $this->afterPaid($order);
+
         return app('wechat_pay')->success();
+    }
+
+    /**
+     * 支付完成后触发事件
+     * @param  Order  $order
+     * @return \App\Events\OrderPaid
+     */
+    protected function afterPaid(Order $order)
+    {
+        event(new OrderPaid($order));
     }
 }
