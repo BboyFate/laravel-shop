@@ -65,6 +65,17 @@
                                     <div class="line-value">{{ $order->ship_data['express_company'] }} {{ $order->ship_data['express_no'] }}</div>
                                 </div>
                             @endif
+                            <!-- 订单已支付，且退款状态不是未退款时展示退款信息 -->
+                            @if ($order->paid_at && $order->refund_status !== \App\Models\Order::REFUND_STATUS_PENDING)
+                                <div class="line">
+                                    <div class="line-label">退款状态：</div>
+                                    <div class="line-value">{{ \App\Models\Order::$refundStatusMap[$order->refund_status] }}</div>
+                                </div>
+                                <div class="line">
+                                    <div class="line-label">退款理由：</div>
+                                    <div class="line-value">{{ $order->extra['refund_reason'] }}</div>
+                                </div>
+                            @endif
                         </div>
                         <div class="order-summary text-right">
                             <div class="total-amount">
@@ -99,6 +110,12 @@
                             @if($order->ship_status === \App\Models\Order::SHIP_STATUS_DELIVERED)
                                 <div class="receive-button">
                                     <button id="btn-reveive" class="btn btn-sm btn-success" type="button">确认收货</button>
+                                </div>
+                            @endif
+                            <!-- 订单已支付，且退款状态是未退款时展示申请退款按钮 -->
+                            @if($order->paid_at && $order->refund_status === \App\Models\Order::REFUND_STATUS_PENDING)
+                                <div class="refund-button">
+                                    <button id="btn-apply-refund" class="btn btn-sm btn-danger">申请退款</button>
                                 </div>
                             @endif
                         </div>
@@ -144,6 +161,28 @@
                                 location.reload();
                             });
                     })
+            });
+
+            // 退款
+            $('#btn-apply-refund').click(function () {
+                swal({
+                    text: '请输入退款理由',
+                    content: 'input',
+                })
+                    .then(function (input) {
+                        // 当用户点击 swal 弹出框上的按钮时触发这个函数
+                        if (!input) {
+                            swal('退款理由不能为空', '', 'error');
+                            return;
+                        }
+                        axios.post('{{ route('orders.apply_refund', ['order' => $order->id]) }}', {reason: input})
+                            .then(function () {
+                                swal('申请退款成功', '', 'success')
+                                    .then(function () {
+                                        location.reload();
+                                    });
+                            });
+                    });
             });
         });
     </script>
