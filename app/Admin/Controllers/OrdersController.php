@@ -4,6 +4,7 @@ namespace App\Admin\Controllers;
 
 use App\Models\Order;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\HandleRefundRequest;
 use App\Exceptions\InvalidRequestExcepiton;
 use Illuminate\Http\Request;
 use Encore\Admin\Controllers\HasResourceActions;
@@ -101,6 +102,34 @@ class OrdersController extends Controller
 
         // 返回上一页
         return redirect()->back();
+    }
+
+    /**
+     * 处理退款
+     * @param  Order               $order
+     * @param  HandleRefundRequest $request
+     * @return Order
+     */
+    public function handleRefund(Order $order, HandleRefundRequest $request)
+    {
+        // 判断订单状态是否正确
+        if ($order->refund_status !== Order::REFUND_STATUS_APPLIED) {
+            throw new InvalidRequestException('订单状态不正确');
+        }
+        // 是否同意退款
+        if ($request->input('agree')) {
+
+        } else {
+            $extra                           = $order->extra ?: [];
+            $extra['refund_disagree_reason'] = $request->input('reason');
+
+            $order->update([
+                'refund_status' => Order::REFUND_STATUS_PENDING,
+                'extra'         => $extra,
+            ]);
+        }
+
+        return $order;
     }
 
     /**

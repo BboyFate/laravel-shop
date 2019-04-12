@@ -83,7 +83,63 @@
                     </tr>
                 @endif
                 <!-- 订单发货 结束 -->
+                @if ($order->refund_status !== \App\Models\Order::REFUND_STATUS_PENDING)
+                    <tr>
+                        <td>退款状态：</td>
+                        <td>{{ App\Models\Order::$refundStatusMap[$order->refund_status] }}，理由：{{ $order->extra['refund_reason'] }}</td>
+                        <td>
+                            <!-- 如果订单退款状态是已申请，则展示处理按钮 -->
+                            @if ($order->refund_status === \App\Models\Order::REFUND_STATUS_APPLIED)
+                                <button id="btn-refund-agree" class="btn btn-sm btn-success">同意</button>
+                                <button id="btn-refund-disagree" class="btn btn-sm btn-danger">不同意</button>
+                            @endif
+                        </td>
+                    </tr>
+                @endif
             </tbody>
         </table>
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        // 不同意退款
+        $('#btn-refund-disagree').click(function () {
+            swal({
+                title: '输入拒绝退款理由',
+                input: 'text',
+                showCancelButton: true,
+                confirmButtonText: '确认',
+                showLoaderOnConfirm: true,
+                preConfirm: function (inputValue) {
+                    if (!inputValue) {
+                        swal('理由不能为空', '', 'error');
+                        return false;
+                    }
+                    return $.ajax({
+                        url: '{{ route('admin.orders.handle_refund', ['order' => $order->id]) }}',
+                        type: 'POST',
+                        data: JSON.stringify({
+                            agree: false,
+                            reason: inputValue,
+                            // 带上 CSRF Token
+                            // Laravel-Admin 页面里可以通过 LA.token 获得 CSRF Token
+                            _token: LA.token,
+                        }),
+                        contentType: 'application/json',
+                    });
+                },
+                allowOutsideClick: false
+            }).then(function (result) {
+                if (result.dismiss === 'cancel') {
+                    return ;
+                }
+                swal({
+                    title: '操作成功',
+                    type: 'success'
+                }).then(function () {
+                    location.reload();
+                });
+            });
+        });
+    });
+</script>
