@@ -229,4 +229,10 @@ return [
 
     // 订单有效时间
     'order_ttl' => 1800,
+
+    /**
+     * 开发环境配置通知地址为 requestbin
+     * @link https://requestbin.fullcontact.com
+     */
+    'requestbin_url' => 'http://requestbin.fullcontact.com/10i1t781',
 ];
