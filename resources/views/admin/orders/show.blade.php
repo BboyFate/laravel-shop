@@ -47,32 +47,34 @@
                 </tr>
                 <!-- 订单发货 开始 -->
                 @if($order->ship_status === \App\Models\Order::SHIP_STATUS_PENDING)
-                    <tr>
-                        <td colspan="4">
-                            <form action="{{ route('admin.orders.ship', [$order->id]) }}" method="post" class="form-inline">
-                                {{ csrf_field() }}
-                                <div class="form-group {{ $errors->has('express_company') ? 'has-error' : '' }}">
-                                    <label for="express_company" class="control-label">物流公司</label>
-                                    <input type="text" id="express_company" name="express_company" value="{{ old('express_company') }}" class="form-control" placeholder="输入物流公司">
-                                    @if($errors->has('express_company'))
-                                        @foreach($errors->get('express_company') as $msg)
-                                            <span class="help-block">{{ $msg }}</span>
-                                        @endforeach
-                                    @endif
-                                </div>
-                                <div class="form-group {{ $errors->has('express_no') ? 'has-error' : '' }}">
-                                    <label for="express_no" class="control-label">物流单号</label>
-                                    <input type="text" id="express_no" name="express_no" value="{{ old('express_no') }}" class="form-control" placeholder="输入物流单号">
-                                    @if($errors->has('express_no'))
-                                        @foreach($errors->get('express_no') as $msg)
-                                            <span class="help-block">{{ $msg }}</span>
-                                        @endforeach
-                                    @endif
-                                </div>
-                                <button type="submit" class="btn btn-success" id="ship-btn">发货</button>
-                            </form>
-                        </td>
-                    </tr>
+                    @if ($order->refund_status !== \App\Models\Order::REFUND_STATUS_SUCCESS)
+                        <tr>
+                            <td colspan="4">
+                                <form action="{{ route('admin.orders.ship', [$order->id]) }}" method="post" class="form-inline">
+                                    {{ csrf_field() }}
+                                    <div class="form-group {{ $errors->has('express_company') ? 'has-error' : '' }}">
+                                        <label for="express_company" class="control-label">物流公司</label>
+                                        <input type="text" id="express_company" name="express_company" value="{{ old('express_company') }}" class="form-control" placeholder="输入物流公司">
+                                        @if($errors->has('express_company'))
+                                            @foreach($errors->get('express_company') as $msg)
+                                                <span class="help-block">{{ $msg }}</span>
+                                            @endforeach
+                                        @endif
+                                    </div>
+                                    <div class="form-group {{ $errors->has('express_no') ? 'has-error' : '' }}">
+                                        <label for="express_no" class="control-label">物流单号</label>
+                                        <input type="text" id="express_no" name="express_no" value="{{ old('express_no') }}" class="form-control" placeholder="输入物流单号">
+                                        @if($errors->has('express_no'))
+                                            @foreach($errors->get('express_no') as $msg)
+                                                <span class="help-block">{{ $msg }}</span>
+                                            @endforeach
+                                        @endif
+                                    </div>
+                                    <button type="submit" class="btn btn-success" id="ship-btn">发货</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endif
                 @else
                     <!-- 否则展示物流公司和物流单号 -->
                     <tr>
@@ -123,6 +125,40 @@
                             reason: inputValue,
                             // 带上 CSRF Token
                             // Laravel-Admin 页面里可以通过 LA.token 获得 CSRF Token
+                            _token: LA.token,
+                        }),
+                        contentType: 'application/json',
+                    });
+                },
+                allowOutsideClick: false
+            }).then(function (result) {
+                if (result.dismiss === 'cancel') {
+                    return ;
+                }
+                swal({
+                    title: '操作成功',
+                    type: 'success'
+                }).then(function () {
+                    location.reload();
+                });
+            });
+        });
+
+        // 同意退款
+        $('#btn-refund-agree').click(function () {
+            swal({
+                title: '确认要将款项还给用户？',
+                type: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '确认',
+                cancelButtonText: '取消',
+                showLoaderOnConfirm: true,
+                preConfirm: function () {
+                    return $.ajax({
+                        url: '{{ route('admin.orders.handle_refund', ['order' => $order->id]) }}',
+                        type: 'POST',
+                        data: JSON.stringify({
+                            agree: true,
                             _token: LA.token,
                         }),
                         contentType: 'application/json',
