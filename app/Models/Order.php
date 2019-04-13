@@ -87,6 +87,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function couponCode()
+    {
+        return $this->belongsTo(CouponCode::class);
+    }
+
     /**
      * 生成一个订单流水号
      * @return string | bool
