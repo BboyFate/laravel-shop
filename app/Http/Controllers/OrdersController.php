@@ -8,9 +8,11 @@ use App\Http\Requests\SendReviewRequest;
 use App\Http\Requests\ApplyRefundRequest;
 use App\Models\UserAddress;
 use App\Models\Order;
+use App\Models\CouponCode;
 use App\Services\OrderService;
 use App\Events\OrderReviewed;
 use App\Exceptions\InvalidRequestException;
+use App\Exceptions\CouponCodeUnavailableException;
 use Carbon\Carbon;
 
 class OrdersController extends Controller
@@ -28,11 +30,22 @@ class OrdersController extends Controller
 
     public function store(OrderRequest $request, OrderService $orderService)
     {
+        $coupon = null;
+
+        // 如果用户提交了优惠码
+        if ($code = $request->input('coupon_code')) {
+            $coupon = CouponCode::query()->where('code', $code)->first();
+            if (!$coupon) {
+                throw new CouponCodeUnavailableException('优惠券不存在');
+            }
+        }
+
         return $orderService->store(
             $request->user(),
             UserAddress::find($request->input('address_id')),
             $request->input('remark'),
-            $request->input('items')
+            $request->input('items'),
+            $coupon
         );
     }
 
